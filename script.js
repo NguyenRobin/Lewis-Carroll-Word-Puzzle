@@ -35,10 +35,12 @@ const inputElement = document.querySelector(".section-input");
 const textHint = document.querySelector(".details__text-hint");
 const BASE_URL = "https://api.dictionaryapi.dev/api/v2/entries/en/";
 let startingWord;
+let endWord;
 
 function getRandomWord() {
   const randomWord = wordList[Math.trunc(Math.random() * wordList.length)];
   startingWord = randomWord.startWord;
+  endWord = randomWord.endWord;
 
   // Making each letter an input field
   let html = "";
@@ -48,33 +50,69 @@ function getRandomWord() {
   inputElement.innerHTML = html;
   textHint.innerHTML = randomWord.text;
 }
+
 getRandomWord();
 
 function guess() {
-  inputElement.addEventListener("keyup", function (event) {
-    let keyPressed = event.key;
-    if (keyPressed.match(/[a-z]/i)) {
-      let guessedLetter = "";
-      for (const letter of document.querySelectorAll("input")) {
-        guessedLetter += letter.value.toUpperCase();
-        startingWord = guessedLetter;
-        console.log(letter);
+  // try {
+  inputElement.addEventListener("keyup", async function (event) {
+    try {
+      let keyPressed = event.key;
+      if (keyPressed.match(/[a-z]/i)) {
+        // console.log(keyPressed);
+        let guessedLetter = "";
+        for (const letter of document.querySelectorAll("input")) {
+          guessedLetter += letter.value.toUpperCase();
+        }
+        const checkInput = await fetch(`${BASE_URL}${guessedLetter}`);
+        if (!checkInput.ok)
+          throw new Error("problem getting word from API ⛔️");
+
+        console.log(guessedLetter);
+        const response = await checkInput.json();
+        // if (!response) throw new Error("problem getting word from API ⛔️");
+
+        if (guessedLetter === response[0].word) {
+          guessedLetter = response[0].word;
+        } else {
+          let html = "";
+          for (let i = 0; i < guessedLetter.length; i++) {
+            html += `<input type="text" maxlength="1" autofocus value="${guessedLetter[i]}" />`;
+          }
+          inputElement.innerHTML = html;
+        }
+
+        console.log(guessedLetter);
+
+        let html = "";
+        for (let i = 0; i < guessedLetter.length; i++) {
+          html += `<input type="text" maxlength="1" autofocus value="${guessedLetter[
+            i
+          ].toUpperCase()}" />`;
+        }
+        inputElement.innerHTML = html;
+        if (guessedLetter === endWord) {
+          alert("YOU WON!");
+          getRandomWord();
+        }
       }
-      getUserWord(startingWord);
+    } catch (error) {
+      console.log(error);
     }
   });
 }
+
 guess();
 
-async function getUserWord(startingWord) {
-  try {
-    const response = await fetch(`${BASE_URL}${startingWord}`);
-    const data = await response.json();
-    console.log("sökord -->", data);
-    return data;
-  } catch (error) {
-    console.log("error ⛔️");
-  }
-}
+// async function getUserWord(startingWord) {
+//   try {
+//     const response = await fetch(`${BASE_URL}${startingWord}`);
+//     const data = await response.json();
+//     console.log("sökord -->", data);
+//     return data;
+//   } catch (error) {
+//     console.log("error ⛔️");
+//   }
+// }
 
 // getUserWord("No");
